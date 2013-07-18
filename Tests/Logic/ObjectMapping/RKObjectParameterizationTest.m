@@ -350,6 +350,43 @@
     expect(parameters).to.equal(expected);
 }
 
+- (void)testParameterizationOfAttributesToNull
+{
+    NSDictionary *object = @{ @"name" : [NSNull null], @"occupation" : @"Hacker" };
+    RKObjectMapping *mapping = [RKObjectMapping requestMapping];
+    [mapping addPropertyMapping:[RKAttributeMapping attributeMappingFromKeyPath:@"name" toKeyPath:@"user.name"]];
+    [mapping addPropertyMapping:[RKAttributeMapping attributeMappingFromKeyPath:@"occupation" toKeyPath:@"user.job"]];
+
+    NSError *error = nil;
+    RKRequestDescriptor *requestDescriptor = [RKRequestDescriptor requestDescriptorWithMapping:mapping objectClass:[NSDictionary class] rootKeyPath:nil];
+    NSDictionary *parameters = [RKObjectParameterization parametersWithObject:object requestDescriptor:requestDescriptor error:&error];
+    NSDictionary *expected = @{@"user": @{@"name": [NSNull null], @"job": @"Hacker"}};
+    expect(parameters).to.equal(expected);
+
+    NSData *data = [RKMIMETypeSerialization dataFromObject:parameters MIMEType:RKMIMETypeJSON error:&error];
+    NSString *string = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    expect(string).to.equal(@"{\"user\":{\"job\":\"Hacker\",\"name\":null}}");
+}
+
+- (void)testParameterizationOfRelationshipToNull
+{
+    NSDictionary *object = @{ @"name" : @"Blake Watters", @"job" : [NSNull null] };
+    RKObjectMapping *mapping = [RKObjectMapping requestMapping];
+    [mapping addPropertyMapping:[RKAttributeMapping attributeMappingFromKeyPath:@"name" toKeyPath:@"name"]];
+    RKObjectMapping *jobMapping = [RKObjectMapping requestMapping];
+    [mapping addPropertyMapping:[RKRelationshipMapping relationshipMappingFromKeyPath:@"job" toKeyPath:@"job" withMapping:jobMapping]];
+
+    NSError *error = nil;
+    RKRequestDescriptor *requestDescriptor = [RKRequestDescriptor requestDescriptorWithMapping:mapping objectClass:[NSDictionary class] rootKeyPath:@"user"];
+    NSDictionary *parameters = [RKObjectParameterization parametersWithObject:object requestDescriptor:requestDescriptor error:&error];
+    NSDictionary *expected = @{@"user": @{@"name": @"Blake Watters", @"job": [NSNull null]}};
+    expect(parameters).to.equal(expected);
+
+    NSData *data = [RKMIMETypeSerialization dataFromObject:parameters MIMEType:RKMIMETypeJSON error:&error];
+    NSString *string = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    expect(string).to.equal(@"{\"user\":{\"job\":null,\"name\":\"Blake Watters\"}}");
+}
+
 - (void)testParameterizationOfAttributesDeeplyNestedByKeyPathToFormEncoded
 {
     NSDictionary *object = @{ @"name" : @"Blake Watters", @"occupation" : @"Hacker" };

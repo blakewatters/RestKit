@@ -851,7 +851,7 @@
     operation.dataSource = dataSource;
     BOOL success = [operation performMapping:nil];
     assertThatBool(success, is(equalToBool(YES)));
-    assertThat(user.name, is(nilValue()));
+    assertThat(user.name, is(equalTo([NSNull null])));
 }
 
 - (void)testShouldBeAbleToMapAUserToADictionary
@@ -2012,7 +2012,7 @@
     assertThat(names, hasItems(@"Zach", nil));
 }
 
-- (void)testReplacmentPolicyForToManyCoreDataRelationshipDeletesExistingValues
+- (void)testReplacementPolicyForToManyCoreDataRelationshipDeletesExistingValues
 {
     RKManagedObjectStore *managedObjectStore = [RKTestFactory managedObjectStore];
     RKHuman *human = [NSEntityDescription insertNewObjectForEntityForName:@"Human" inManagedObjectContext:managedObjectStore.mainQueueManagedObjectContext];
@@ -2481,6 +2481,28 @@
     assertThat(humans, hasCountOf(2));
     assertThat([humans objectAtIndex:0], is(equalTo(human1)));
     assertThat([humans objectAtIndex:1], is(equalTo(human2)));
+}
+
+- (void)testThatMappingNSNullToManagedObjectDoesNotCrash
+{
+    RKManagedObjectStore *managedObjectStore = [RKTestFactory managedObjectStore];
+    NSDictionary *representation = @{ @"name": [NSNull null] };
+    RKEntityMapping *humanMapping = [RKEntityMapping mappingForEntityForName:@"Human" inManagedObjectStore:managedObjectStore];
+    [humanMapping addAttributeMappingsFromDictionary:@{ @"name": @"name" }];
+
+    NSDictionary *mappingsDictionary = @{ [NSNull null]: humanMapping };
+    RKMapperOperation *mapper = [[RKMapperOperation alloc] initWithRepresentation:representation mappingsDictionary:mappingsDictionary];
+    RKFetchRequestManagedObjectCache *managedObjectCache = [[RKFetchRequestManagedObjectCache alloc] init];
+    mapper.mappingOperationDataSource = [[RKManagedObjectMappingOperationDataSource alloc] initWithManagedObjectContext:managedObjectStore.persistentStoreManagedObjectContext
+                                                                                                                  cache:managedObjectCache];
+
+    [mapper start];
+    RKMappingResult *result = mapper.mappingResult;
+    assertThat(result, is(notNilValue()));
+    expect([[result firstObject] name]).to.equal(nil);
+    NSError *error = nil;
+    BOOL success = [managedObjectStore.persistentStoreManagedObjectContext save:&error];
+    expect(success).to.beTruthy();
 }
 
 - (void)testMappingMultipleKeyPathsAtRootOfObject

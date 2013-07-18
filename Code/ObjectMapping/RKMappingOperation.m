@@ -473,18 +473,6 @@ static NSString * const RKRootKeyPathPrefix = @"@root.";
         currentValue = nil;
     }
 
-    /*
-     WTF - This workaround should not be necessary, but I have been unable to replicate
-     the circumstances that trigger it in a unit test to fix elsewhere. The proper place
-     to handle it is in transformValue:atKeyPath:toType:
-
-     See issue & pull request: https://github.com/RestKit/RestKit/pull/436
-     */
-    if (*value == [NSNull null]) {
-        RKLogWarning(@"Coercing NSNull value to nil in shouldSetValue:atKeyPath: -- should be fixed.");
-        *value = nil;
-    }
-
     if (nil == currentValue && nil == *value) {
         // Both are nil
         return NO;

@@ -33,6 +33,7 @@
 
 - (void)testSuccessfulConnectionOfToOneRelationship
 {
+    RKLogConfigureByName("RestKit/CoreData*", RKLogLevelTrace);
     RKHuman *human = [RKTestFactory insertManagedObjectForEntityForName:@"Human" inManagedObjectContext:nil withProperties:nil];
     human.favoriteCatID = @250;
     RKCat *asia = [RKTestFactory insertManagedObjectForEntityForName:@"Cat" inManagedObjectContext:nil withProperties:nil];
